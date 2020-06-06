@@ -6,8 +6,8 @@
 #include <sys/types.h> 
 #include <sys/socket.h>
 #include <netinet/in.h>
-
-#define BUFFER 2048
+#include "Protocol.h"
+#include "Writer.h"
 
 int sockfd;
 
@@ -28,9 +28,11 @@ void server_loop()
 {
     int n, newsockfd;
     socklen_t clilen;
-    char buffer[BUFFER];
+    char buffer[MAX_PROTOCOL_SIZE];
 
     struct sockaddr_in cli_addr;
+
+    Protocol *client_data;
 
     while (1) 
     {
@@ -47,16 +49,20 @@ void server_loop()
             error("ERROR on accept");
         }
 
-        bzero(buffer,BUFFER);
+        bzero(buffer, MAX_PROTOCOL_SIZE);
 
         // Read the message of the client into the buffer
-        n = read(newsockfd,buffer,BUFFER-1);
+        n = read(newsockfd,buffer,MAX_PROTOCOL_SIZE-1);
 
         if (n < 0) {
             error("ERROR reading from socket");
         }
 
-        printf("Received request: %s\n",buffer);
+        printf("Received request from client\n");
+
+        client_data = (Protocol *) buffer;
+
+        write_change(*client_data);
 
         n = write(newsockfd,"Success", 7);
 
@@ -71,8 +77,6 @@ void server_loop()
 
 int main(int argc, char *argv[])
 {
-    const char *directory = "./server_directory/";
-
     int portno;
     struct sockaddr_in serv_addr;
 
@@ -114,3 +118,5 @@ int main(int argc, char *argv[])
     close(sockfd);
     return 0; 
 }
+
+//dorime
