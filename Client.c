@@ -8,6 +8,7 @@
 #include <netinet/in.h>
 #include <netdb.h> 
 #include "Protocol.h"
+#include "Monitor.h"
 
 int sockfd;
 
@@ -22,34 +23,6 @@ void handle_sigint(int sig)
     printf("\nStopping client...\n");
     close(sockfd);
     exit(0);
-}
-
-void send_data(struct sockaddr_in serv_addr) 
-{
-    int n;
-    char *serialized;
-    char buffer[256];
-    Protocol data;
-
-    data.type = PROTOCOL_CREATE;
-    data.is_dir = 0;
-    strcpy(data.dir, "hola.txt");
-    strcpy(data.content, "Hola que tal");
-
-    serialized = (char *) &data;
-
-    n = write(sockfd, serialized, MAX_PROTOCOL_SIZE);
-
-    if (n < 0) 
-         error("ERROR writing to socket");
-
-    bzero(buffer, 256);
-    n = read(sockfd,buffer, 255);
-
-    if (n < 0) 
-         error("ERROR reading from socket");
-
-    printf("%s\n",buffer);
 }
 
 int main(int argc, char *argv[])
@@ -84,13 +57,8 @@ int main(int argc, char *argv[])
          (char *)&serv_addr.sin_addr.s_addr,
          server->h_length);
     serv_addr.sin_port = htons(portNo);
-
-    if (connect(sockfd,(struct sockaddr *) &serv_addr,sizeof(serv_addr)) < 0) 
-        error("ERROR connecting");
-
-
-    send_data(serv_addr);
-
-    close(sockfd);
+    
+    start_monitor(serv_addr, sockfd);
+    
     return 0;
 }

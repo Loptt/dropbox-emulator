@@ -39,17 +39,50 @@ void create_file(Protocol data)
 void modify_file(Protocol data)
 {    
     FILE *modify;
-    modify = fopen(data.dir, "w+");
+
+    int path_length = strlen(directory) + strlen(data.dir);
+
+    char *path = malloc(path_length);
+
+    strcpy(path, directory);
+    strcat(path, data.dir);
+
+
+    if (data.is_dir) 
+    {
+        return;
+    }
+
+    printf("MODIFYING with %s\n", data.content);
+
+    modify = fopen(path, "w");
+
+    if (!modify) {
+        printf("Error opening file/directory\n");
+        exit(1);
+    }
+
     fprintf(modify,"%s\n",data.content);
     fclose(modify);
+
+    free(path);
 }
 
 void delete_file(Protocol data)
 {
-    if (remove(data.dir) == 0) 
+    int path_length = strlen(directory) + strlen(data.dir);
+
+    char *path = malloc(path_length);
+
+    strcpy(path, directory);
+    strcat(path, data.dir);
+
+    if (remove(path) == 0) 
         printf("Deleted successfully"); 
     else
         printf("Unable to delete the file"); 
+    
+    free(path);
 }
 
 void write_change(Protocol data)
