@@ -27,34 +27,29 @@ void handle_sigint(int sig)
 void send_data(struct sockaddr_in serv_addr) 
 {
     int n;
-    char *buffer;
+    char *serialized;
+    char buffer[256];
     Protocol data;
 
     data.type = PROTOCOL_CREATE;
     data.is_dir = 0;
-    data.dir = "quetal.txt";
-    data.content = "Hola que tal";
+    strcpy(data.dir, "hola.txt");
+    strcpy(data.content, "Hola que tal");
 
-    buffer = malloc(MAX_PROTOCOL_SIZE);
+    serialized = (char *) &data;
 
-    bzero(buffer, MAX_PROTOCOL_SIZE);
-
-    buffer = (char *) &data;
-
-    n = write(sockfd, buffer, MAX_PROTOCOL_SIZE);
+    n = write(sockfd, serialized, MAX_PROTOCOL_SIZE);
 
     if (n < 0) 
          error("ERROR writing to socket");
 
-    bzero(buffer,256);
-    n = read(sockfd,buffer,255);
+    bzero(buffer, 256);
+    n = read(sockfd,buffer, 255);
 
     if (n < 0) 
          error("ERROR reading from socket");
 
     printf("%s\n",buffer);
-
-    free(buffer);
 }
 
 int main(int argc, char *argv[])
