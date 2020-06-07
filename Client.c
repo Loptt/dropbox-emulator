@@ -27,43 +27,15 @@ void handle_sigint(int sig)
 
 int main(int argc, char *argv[])
 {
-    int portNo;
-    struct sockaddr_in serv_addr;
-    struct hostent *server;
     // Verify the port entered (more than 3 numbers)
     if (argc < 3) {
-       fprintf(stderr,"usage %s hostname port\n", argv[0]);
-       exit(0);
+    fprintf(stderr,"usage %s hostname port\n", argv[0]);
+    exit(0);
     }
 
     signal(SIGINT, handle_sigint);
 
-    portNo = atoi(argv[2]);
-    sockfd = socket(AF_INET, SOCK_STREAM, 0);
+    start_monitor(argv[1], argv[2]);
 
-    if (sockfd < 0) 
-        error("ERROR opening socket");
-
-    server = gethostbyname(argv[1]);
-    //Error message if the client couldn't find the host
-    if (server == NULL) {
-        fprintf(stderr,"ERROR, no such host\n");
-        exit(0);
-    }
-
-    bzero((char *) &serv_addr, sizeof(serv_addr));
-    serv_addr.sin_family = AF_INET;
-    bcopy((char *)server->h_addr, 
-         (char *)&serv_addr.sin_addr.s_addr,
-         server->h_length);
-    serv_addr.sin_port = htons(portNo);
-    
-    if (connect(sockfd,(struct sockaddr *) &serv_addr,sizeof(serv_addr)) < 0) 
-        error("ERROR connecting");
-
-    start_monitor(serv_addr, sockfd);
-
-    close(sockfd);
-    
     return 0;
 }

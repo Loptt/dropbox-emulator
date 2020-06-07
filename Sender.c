@@ -9,6 +9,33 @@
 #include <netdb.h> 
 #include "Protocol.h"
 
+void setup_connection(char *addr, char *portchar, struct sockaddr_in *serv_addr, int *sockfd)
+{
+     struct hostent *server;
+     int portNo;
+
+     portNo = atoi(portchar);
+     *sockfd = socket(AF_INET, SOCK_STREAM, 0);
+
+
+     if (*sockfd < 0) 
+          error("ERROR opening socket");
+
+     server = gethostbyname(addr);
+     //Error message if the client couldn't find the host
+     if (server == NULL) {
+          fprintf(stderr,"ERROR, no such host\n");
+          exit(0);
+     }
+
+     bzero((char *) serv_addr, sizeof(*serv_addr));
+     serv_addr->sin_family = AF_INET;
+     bcopy((char *)server->h_addr, 
+          (char *)&serv_addr->sin_addr.s_addr,
+          server->h_length);
+     serv_addr->sin_port = htons(portNo);
+}
+
 void send_data(Protocol data, struct sockaddr_in serv_addr, int sockfd) 
 {
     int n;
@@ -16,6 +43,9 @@ void send_data(Protocol data, struct sockaddr_in serv_addr, int sockfd)
     char buffer[256];
 
     serialized = (char *) &data;
+
+     if (connect(sockfd,(struct sockaddr *) &serv_addr,sizeof(serv_addr)) < 0) 
+        error("ERROR connecting");
 
     printf("TYPE: %d\n", data.type);
 
@@ -31,4 +61,7 @@ void send_data(Protocol data, struct sockaddr_in serv_addr, int sockfd)
          error("ERROR reading from socket");
 
     printf("%s\n",buffer);
+
+     close(sockfd);
+    
 }

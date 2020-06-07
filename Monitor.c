@@ -10,16 +10,19 @@
 #include "Protocol.h"
 #include "Sender.h"
 
-#define PATH "./client_directory"
+#define PATH "./client_directory/"
 #define MAX_EVENT_MONITOR 2048
 #define NAME_LEN 256 //file name length
 #define MONITOR_EVENT_SIZE (sizeof(struct inotify_event)) //size of one event
 #define BUFFER_LEN MAX_EVENT_MONITOR*(MONITOR_EVENT_SIZE+NAME_LEN) //buffer length
 
-void start_monitor(struct sockaddr_in serv_addr, int sockfd) {
+void start_monitor(char *addr, char *port) {
     int fd,watch_desc;
     char buffer[BUFFER_LEN];
     fd=inotify_init();
+
+    int sockfd;
+    struct sockaddr_in serv_addr;
 
     char dataread[2048];
     long filelen;
@@ -53,14 +56,19 @@ void start_monitor(struct sockaddr_in serv_addr, int sockfd) {
 
         printf("ENTRADA EN WHILE PITERO\n");
 
+        printf("MASK MODIFY: %d\n", IN_MODIFY);
+
         while(i < total_read) {
             printf("WHILE PITERO\n");
             struct inotify_event *event=(struct inotify_event*)&buffer[i];
 
             memset(&data, 0, sizeof(Protocol));
 
+            printf("MASK CURRENT: %d EVENT LEN: %d\n", event->mask, event->len);
             if(event->len){
+                printf("EVENT LEN IS ON\n");
                 if(event->mask & IN_CREATE){
+                    printf("CREATE IS ON\n");
                     data.type = PROTOCOL_CREATE;
                     strcpy(data.dir, event->name);
                     if(event->mask &IN_ISDIR){
@@ -72,7 +80,8 @@ void start_monitor(struct sockaddr_in serv_addr, int sockfd) {
                         printf("File \"%s\"was created\n",event->name);
                     } 
                 }
-                else if(event->mask & IN_MODIFY){
+                if(event->mask & IN_MODIFY){
+                    printf("MODIFY IS ON\n");
                     data.type = PROTOCOL_MODIFY;
                     strcpy(data.dir, event->name);
                     if(event->mask &IN_ISDIR){
@@ -81,12 +90,24 @@ void start_monitor(struct sockaddr_in serv_addr, int sockfd) {
                     }
                     else{
                         data.is_dir = 0;
-                        FILE *fp = fopen(event->name, "rb");
+                        int path_length = event->len + strlen(PATH);
+                        char *path;
+
+                        path = malloc(path_length);
+
+                        strcpy(path, PATH);
+                        strcat(path, event->name);
+
+                        FILE *fp = fopen(path, "rb");
+
 
                         if (!fp) {
+                            printf("Error opening file for modify: %s\n", path);
                             i += MONITOR_EVENT_SIZE+event->len;
                             break;
                         }
+
+                        free(path);
 
                         fseek(fp, 0, SEEK_END);
                         filelen = ftell(fp);
@@ -108,7 +129,8 @@ void start_monitor(struct sockaddr_in serv_addr, int sockfd) {
                         printf("File \"%s\"was modified\n",event->name);
                     } 
                 }
-                else if(event->mask & IN_DELETE){
+                if(event->mask & IN_DELETE){
+                    printf("DELETE IS ON\n");
                     data.type = PROTOCOL_DELETE;
                     strcpy(data.dir, event->name);
                     if(event->mask &IN_ISDIR){
@@ -120,7 +142,9 @@ void start_monitor(struct sockaddr_in serv_addr, int sockfd) {
                         printf("File \"%s\"was deleted\n",event->name);
                     } 
                 }
+                printf("SENDING DATA TO SERVER\n");
                 i += MONITOR_EVENT_SIZE+event->len;
+                setup_connection(addr, port, &serv_addr, &sockfd);
                 send_data(data, serv_addr, sockfd);
             } else {
                 break;
