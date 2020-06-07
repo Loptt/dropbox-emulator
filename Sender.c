@@ -19,7 +19,7 @@ void setup_connection(char *addr, char *portchar, struct sockaddr_in *serv_addr,
 
 
      if (*sockfd < 0) 
-          error("ERROR opening socket");
+          perror("ERROR opening socket");
 
      server = gethostbyname(addr);
      //Error message if the client couldn't find the host
@@ -45,20 +45,27 @@ void send_data(Protocol data, struct sockaddr_in serv_addr, int sockfd)
     serialized = (char *) &data;
 
      if (connect(sockfd,(struct sockaddr *) &serv_addr,sizeof(serv_addr)) < 0) 
-        error("ERROR connecting");
+        perror("ERROR connecting");
 
-    printf("TYPE: %d\n", data.type);
+     printf("SENDING ");
+
+     for (int i = 0; i < strlen(data.content); i++)
+     {
+          printf("%02X ", data.content[i]);
+     }
+
+     printf("\n");
 
     n = write(sockfd, serialized, MAX_PROTOCOL_SIZE);
 
     if (n < 0) 
-         error("ERROR writing to socket");
+         perror("ERROR writing to socket");
 
     bzero(buffer, 256);
     n = read(sockfd,buffer, 255);
 
     if (n < 0) 
-         error("ERROR reading from socket");
+         perror("ERROR reading from socket");
 
     printf("%s\n",buffer);
 

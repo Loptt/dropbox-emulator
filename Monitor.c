@@ -46,29 +46,19 @@ void start_monitor(char *addr, char *port) {
 
     while(1) {
 	    i = 0;
-        printf("READING EVENT\n");
         int total_read = read(fd,buffer,BUFFER_LEN);
-        printf("READ EVENT %d\n", total_read);
 
         if(total_read<0){
             perror("read error");
         }
 
-        printf("ENTRADA EN WHILE PITERO\n");
-
-        printf("MASK MODIFY: %d\n", IN_MODIFY);
-
         while(i < total_read) {
-            printf("WHILE PITERO\n");
             struct inotify_event *event=(struct inotify_event*)&buffer[i];
 
             memset(&data, 0, sizeof(Protocol));
 
-            printf("MASK CURRENT: %d EVENT LEN: %d\n", event->mask, event->len);
             if(event->len){
-                printf("EVENT LEN IS ON\n");
                 if(event->mask & IN_CREATE){
-                    printf("CREATE IS ON\n");
                     data.type = PROTOCOL_CREATE;
                     strcpy(data.dir, event->name);
                     if(event->mask &IN_ISDIR){
@@ -81,7 +71,6 @@ void start_monitor(char *addr, char *port) {
                     } 
                 }
                 if(event->mask & IN_MODIFY){
-                    printf("MODIFY IS ON\n");
                     data.type = PROTOCOL_MODIFY;
                     strcpy(data.dir, event->name);
                     if(event->mask &IN_ISDIR){
@@ -116,12 +105,12 @@ void start_monitor(char *addr, char *port) {
                         if (filelen < 2048)
                         {
                             fread(dataread, filelen, 1, fp);
-                            dataread[filelen] = '\0';
+                            dataread[filelen-1] = '\0';
                         }
                         else
                         {
                             fread(dataread, 2048, 1, fp);
-                            dataread[2047] = '\0';
+                            dataread[2047-1] = '\0';
                         }
                         
                         fclose(fp);
@@ -130,7 +119,6 @@ void start_monitor(char *addr, char *port) {
                     } 
                 }
                 if(event->mask & IN_DELETE){
-                    printf("DELETE IS ON\n");
                     data.type = PROTOCOL_DELETE;
                     strcpy(data.dir, event->name);
                     if(event->mask &IN_ISDIR){
@@ -142,7 +130,6 @@ void start_monitor(char *addr, char *port) {
                         printf("File \"%s\"was deleted\n",event->name);
                     } 
                 }
-                printf("SENDING DATA TO SERVER\n");
                 i += MONITOR_EVENT_SIZE+event->len;
                 setup_connection(addr, port, &serv_addr, &sockfd);
                 send_data(data, serv_addr, sockfd);
@@ -150,8 +137,6 @@ void start_monitor(char *addr, char *port) {
                 break;
             }
         }
-
-        printf("SALIDA DEL WHILE PITERO\n");
     }
     inotify_rm_watch(fd,watch_desc);
     close(fd);
