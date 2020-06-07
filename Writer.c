@@ -77,10 +77,9 @@ void delete_file(Protocol data)
     strcpy(path, directory);
     strcat(path, data.dir);
 
-    if (remove(path) == 0) 
-        printf("Deleted successfully"); 
-    else
+    if (remove(path) != 0) {
         printf("Unable to delete the file"); 
+    }
     
     free(path);
 }
@@ -90,7 +89,6 @@ void write_change(Protocol data)
     switch(data.type)
     {
         case PROTOCOL_CREATE:
-            
             create_file(data);
             break;
         case PROTOCOL_MODIFY:

@@ -15,11 +15,9 @@ void send_data(Protocol data, struct sockaddr_in serv_addr, int sockfd)
     char *serialized;
     char buffer[256];
 
-    if (connect(sockfd,(struct sockaddr *) &serv_addr,sizeof(serv_addr)) < 0) 
-        error("ERROR connecting");
-
-
     serialized = (char *) &data;
+
+    printf("TYPE: %d\n", data.type);
 
     n = write(sockfd, serialized, MAX_PROTOCOL_SIZE);
 
@@ -33,6 +31,4 @@ void send_data(Protocol data, struct sockaddr_in serv_addr, int sockfd)
          error("ERROR reading from socket");
 
     printf("%s\n",buffer);
-
-    close(sockfd);
 }

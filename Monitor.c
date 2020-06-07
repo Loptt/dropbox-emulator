@@ -39,16 +39,26 @@ void start_monitor(struct sockaddr_in serv_addr, int sockfd) {
         printf("Monitor added to path: %s \n",PATH);
     }
 
-    int i=0;
+    int i = 0;
 
-    while(1){
-	i=0;
+    while(1) {
+	    i = 0;
+        printf("READING EVENT\n");
         int total_read = read(fd,buffer,BUFFER_LEN);
+        printf("READ EVENT %d\n", total_read);
+
         if(total_read<0){
             perror("read error");
         }
-        while(i<total_read){
+
+        printf("ENTRADA EN WHILE PITERO\n");
+
+        while(i < total_read) {
+            printf("WHILE PITERO\n");
             struct inotify_event *event=(struct inotify_event*)&buffer[i];
+
+            memset(&data, 0, sizeof(Protocol));
+
             if(event->len){
                 if(event->mask & IN_CREATE){
                     data.type = PROTOCOL_CREATE;
@@ -62,7 +72,7 @@ void start_monitor(struct sockaddr_in serv_addr, int sockfd) {
                         printf("File \"%s\"was created\n",event->name);
                     } 
                 }
-                if(event->mask & IN_MODIFY){
+                else if(event->mask & IN_MODIFY){
                     data.type = PROTOCOL_MODIFY;
                     strcpy(data.dir, event->name);
                     if(event->mask &IN_ISDIR){
@@ -72,6 +82,11 @@ void start_monitor(struct sockaddr_in serv_addr, int sockfd) {
                     else{
                         data.is_dir = 0;
                         FILE *fp = fopen(event->name, "rb");
+
+                        if (!fp) {
+                            i += MONITOR_EVENT_SIZE+event->len;
+                            break;
+                        }
 
                         fseek(fp, 0, SEEK_END);
                         filelen = ftell(fp);
@@ -93,7 +108,7 @@ void start_monitor(struct sockaddr_in serv_addr, int sockfd) {
                         printf("File \"%s\"was modified\n",event->name);
                     } 
                 }
-                if(event->mask & IN_DELETE){
+                else if(event->mask & IN_DELETE){
                     data.type = PROTOCOL_DELETE;
                     strcpy(data.dir, event->name);
                     if(event->mask &IN_ISDIR){
@@ -105,11 +120,14 @@ void start_monitor(struct sockaddr_in serv_addr, int sockfd) {
                         printf("File \"%s\"was deleted\n",event->name);
                     } 
                 }
-
+                i += MONITOR_EVENT_SIZE+event->len;
                 send_data(data, serv_addr, sockfd);
-                i+=MONITOR_EVENT_SIZE+event->len;
+            } else {
+                break;
             }
         }
+
+        printf("SALIDA DEL WHILE PITERO\n");
     }
     inotify_rm_watch(fd,watch_desc);
     close(fd);
