@@ -1,16 +1,19 @@
+#include <sys/types.h>
+#include <sys/stat.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
+#include <fcntl.h>
+#include <errno.h>
 #include <unistd.h>
+#include <syslog.h>
+#include <string.h>
 #include <signal.h>
-#include <sys/types.h> 
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include "Protocol.h"
 #include "Writer.h"
 
 int sockfd;
-
 void error(const char *msg)
 {
     perror(msg);
@@ -75,15 +78,52 @@ void server_loop()
     }
 }
 
+
 int main(int argc, char *argv[])
 {
-    int portno;
-    struct sockaddr_in serv_addr;
 
     if (argc < 2) {
         fprintf(stderr,"ERROR, no port provided\n");
         exit(1);
     }
+
+    /* Our process ID and Session ID */
+    pid_t pid, sid;
+
+    /* Fork off the parent process */
+    pid = fork();
+    if (pid < 0)
+    {
+        exit(EXIT_FAILURE);
+    }
+    /* If we got a good PID, then
+           we can exit the parent process. */
+    if (pid > 0)
+    {
+        exit(EXIT_SUCCESS);
+    }
+
+    /* Change the file mode mask */
+    umask(0);
+
+    /* Open any logs here */
+
+    /* Create a new SID for the child process */
+    sid = setsid();
+    if (sid < 0)
+    {
+        /* Log the failure */
+        exit(EXIT_FAILURE);
+    }
+
+    /* Close out the standard file descriptors */
+    close(STDIN_FILENO);
+    close(STDOUT_FILENO);
+    close(STDERR_FILENO);
+
+    /* Daemon-specific initialization goes here */
+    int portno;
+    struct sockaddr_in serv_addr;
 
     signal(SIGINT, handle_sigint);
 
@@ -110,13 +150,9 @@ int main(int argc, char *argv[])
             sizeof(serv_addr)) < 0) {
                 error("ERROR on binding");
             }
-
-
+    /* The Big Loop */
     server_loop(sockfd);
-
     // Close server and client sockets
     close(sockfd);
-    return 0; 
+    exit(EXIT_SUCCESS);
 }
-
-//dorime
