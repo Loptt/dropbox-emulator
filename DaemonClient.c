@@ -2,12 +2,13 @@
 #include <sys/stat.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/inotify.h>
 #include <fcntl.h>
 #include <errno.h>
 #include <unistd.h>
 #include <syslog.h>
 #include <string.h>
-#include <stdbool.h>
+#include <signal.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netdb.h> 
@@ -25,6 +26,13 @@ int sockfd;
 void error(const char *msg)
 {
     perror(msg);
+    exit(0);
+}
+
+void handle_sigint(int sig)
+{
+    printf("\nStopping client...\n");
+    close(sockfd);
     exit(0);
 }
 
@@ -72,7 +80,7 @@ int main(int argc, char *argv[])
     close(STDERR_FILENO);
 
     /* Daemon-specific initialization goes here */
-    int fd,watch_desc;
+        int fd,watch_desc;
     char buffer[BUFFER_LEN];
     fd=inotify_init();
 
@@ -99,9 +107,8 @@ int main(int argc, char *argv[])
 
     int i = 0;
     /* The Big Loop */
-    while (1)
-    {
-        i = 0;
+    while(1) {
+	    i = 0;
         int total_read = read(fd,buffer,BUFFER_LEN);
 
         if(total_read<0){
@@ -187,12 +194,12 @@ int main(int argc, char *argv[])
                     } 
                 }
                 i += MONITOR_EVENT_SIZE+event->len;
-                setup_connection(argv[1], argv[2], &serv_addr, &sockfd);
+                setup_connection(addr, port, &serv_addr, &sockfd);
                 send_data(data, serv_addr, sockfd);
             } else {
                 break;
             }
-        sleep(10); /* wait 10 milliseconds */
+        }
     }
     inotify_rm_watch(fd,watch_desc);
     close(fd);
