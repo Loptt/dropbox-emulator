@@ -1,0 +1,17 @@
+{
+    "files.associations": {
+        "*.tcc": "c",
+        "system_error": "c",
+        "random": "c",
+        "fstream": "c",
+        "istream": "c",
+        "limits": "c",
+        "new": "c",
+        "ostream": "c",
+        "stdexcept": "c",
+        "streambuf": "c",
+        "functional": "c",
+        "sender.h": "c",
+        "in.h": "c"
+    }
+}
