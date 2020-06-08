@@ -194,7 +194,7 @@ int main(int argc, char *argv[])
                     } 
                 }
                 i += MONITOR_EVENT_SIZE+event->len;
-                setup_connection(addr, port, &serv_addr, &sockfd);
+                setup_connection(argv[1], argv[2], &serv_addr, &sockfd);
                 send_data(data, serv_addr, sockfd);
             } else {
                 break;
