@@ -29,8 +29,8 @@ int main(int argc, char *argv[])
 {
     // Verify the port entered (more than 3 numbers)
     if (argc < 3) {
-    fprintf(stderr,"usage %s hostname port\n", argv[0]);
-    exit(0);
+        fprintf(stderr,"usage %s hostname port\n", argv[0]);
+        exit(0);
     }
 
     signal(SIGINT, handle_sigint);
