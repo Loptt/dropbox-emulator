@@ -7,18 +7,6 @@
 #include <unistd.h>
 #include <syslog.h>
 #include <string.h>
-#include <string.h>
-#include <signal.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <netdb.h> 
-#include "Protocol.h"
-#include "Monitor.h"
-#include <stdio.h>
-#include <stdlib.h>
-#include <sys/inotify.h>
-#include <string.h>
-#include <unistd.h>
 #include <stdbool.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -32,7 +20,6 @@
 #define MONITOR_EVENT_SIZE (sizeof(struct inotify_event)) //size of one event
 #define BUFFER_LEN MAX_EVENT_MONITOR*(MONITOR_EVENT_SIZE+NAME_LEN) //buffer length
 
-
 int sockfd;
 
 void error(const char *msg)
@@ -41,15 +28,14 @@ void error(const char *msg)
     exit(0);
 }
 
-void handle_sigint(int sig)
-{
-    printf("\nStopping client...\n");
-    close(sockfd);
-    exit(0);
-}
 
 int main(int argc, char *argv[])
 {
+    // Verify the port entered (more than 3 numbers)
+    if (argc < 3) {
+    fprintf(stderr,"usage %s hostname port\n", argv[0]);
+    exit(0);
+    }
 
     /* Our process ID and Session ID */
     pid_t pid, sid;
@@ -70,6 +56,8 @@ int main(int argc, char *argv[])
     /* Change the file mode mask */
     umask(0);
 
+    /* Open any logs here */
+
     /* Create a new SID for the child process */
     sid = setsid();
     if (sid < 0)
@@ -84,15 +72,6 @@ int main(int argc, char *argv[])
     close(STDERR_FILENO);
 
     /* Daemon-specific initialization goes here */
-
-    // Verify the port entered (more than 3 numbers)
-    if (argc < 3) {
-    fprintf(stderr,"usage %s hostname port\n", argv[0]);
-        exit(0);
-    }
-
-    signal(SIGINT, handle_sigint);
-
     int fd,watch_desc;
     char buffer[BUFFER_LEN];
     fd=inotify_init();
@@ -122,7 +101,7 @@ int main(int argc, char *argv[])
     /* The Big Loop */
     while (1)
     {
-	    i = 0;
+        i = 0;
         int total_read = read(fd,buffer,BUFFER_LEN);
 
         if(total_read<0){
@@ -213,8 +192,6 @@ int main(int argc, char *argv[])
             } else {
                 break;
             }
-    }
-
         sleep(10); /* wait 10 milliseconds */
     }
     inotify_rm_watch(fd,watch_desc);
