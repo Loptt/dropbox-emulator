@@ -12,6 +12,7 @@
         "streambuf": "c",
         "functional": "c",
         "sender.h": "c",
-        "in.h": "c"
+        "in.h": "c",
+        "stat.h": "c"
     }
 }
